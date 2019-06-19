@@ -125,6 +125,9 @@ def run(flags_obj):
       distribution_strategy=flags_obj.distribution_strategy,
       num_gpus=flags_obj.num_gpus)
 
+  if strategy is None:
+    strategy = tf.distribute.get_strategy()
+
   strategy_scope = distribution_utils.get_strategy_scope(strategy)
 
   if flags_obj.use_synthetic_data:
@@ -139,19 +142,20 @@ def run(flags_obj):
     distribution_utils.undo_set_up_synthetic_data()
     input_fn = cifar_main.input_fn
 
-  train_input_dataset = input_fn(
+  from tensorflow.python.data.ops import dataset_ops
+  train_input_dataset = dataset_ops.DatasetV1Adapter(input_fn(
       is_training=True,
       data_dir=flags_obj.data_dir,
       batch_size=flags_obj.batch_size,
       num_epochs=flags_obj.train_epochs,
-      parse_record_fn=parse_record_keras)
+      parse_record_fn=parse_record_keras))
 
-  eval_input_dataset = input_fn(
+  eval_input_dataset = dataset_ops.DatasetV1Adapter(input_fn(
       is_training=False,
       data_dir=flags_obj.data_dir,
       batch_size=flags_obj.batch_size,
       num_epochs=flags_obj.train_epochs,
-      parse_record_fn=parse_record_keras)
+      parse_record_fn=parse_record_keras))
 
   with strategy_scope:
     optimizer = keras_common.get_optimizer()
@@ -161,6 +165,7 @@ def run(flags_obj):
                   optimizer=optimizer,
                   run_eagerly=flags_obj.run_eagerly,
                   metrics=['categorical_accuracy'])
+    model._distribution_strategy = strategy
 
   callbacks = keras_common.get_callbacks(
       learning_rate_schedule, cifar_main.NUM_IMAGES['train'])
