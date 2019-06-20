@@ -190,9 +190,9 @@ def run(flags_obj):
                       epochs=train_epochs,
                       steps_per_epoch=train_steps,
                       callbacks=callbacks,
-                      validation_steps=num_eval_steps,
-                      validation_data=validation_data,
-                      validation_freq=flags_obj.epochs_between_evals,
+                      #validation_steps=num_eval_steps,
+                      #validation_data=validation_data,
+                      #validation_freq=flags_obj.epochs_between_evals,
                       verbose=2)
   eval_output = None
   if not flags_obj.skip_eval:
